@@ -1,6 +1,5 @@
 import { sub, formatDistanceToNow, parseISO } from "date-fns"
 import data from "./data.json"
-import { v4 as uuidv4} from "uuid"
 import Comments from "./components/Comments"
 import { createContext, useState, useContext, useEffect } from "react"
 import Modal from "./components/Modal"
@@ -69,18 +68,17 @@ function App() {
     }
     setDataComments([newComment, ...dataComments])
   }
-  
-  const handleCloseModal = () => {
-    setIsModalOpen(false)
-    setDeleteId(0)
-  }
 
   // Delete Comment
   const deleteComment = (id) => {
-    let newComments = dataComments.filter((comment) => comment.id !== id);
+    let newComments = dataComments.map((comment) => {
+      if( comment.id !== id) {
+        comment["isDeleted"] = true
+      }
+    });
+    
     if(newComments.length === dataComments.length) {
       newComments = dataComments.map((comment) => {
-        comment.replies = comment.replies.filter((reply) => reply.id !== deleteId);
         return comment
       })
     }
@@ -109,9 +107,9 @@ function App() {
   // Handle Effect
   useEffect(() => {
     const updatedComments = data.comments.map(comment => {
-    const commentCreatedAt = calculateCreatedAt(comment.createdAt); 
+    const commentCreatedAt = calculateCreatedAt(comment.createdAt);
     //Check if the replies exist.
-    const updatedReplies = comment.replies && Array.isArray(comment.replies)?comment.replies.map(reply => {
+    const updatedReplies = comment.replies && Array.isArray(comment.replies) ? comment.replies.map(reply => {
       const replyCreatedAt = calculateCreatedAt(reply.createdAt);
       return { ...reply, createdAt: convertToRelativeTime(replyCreatedAt.toISOString()) };
     }):[dataComments];
@@ -119,15 +117,15 @@ function App() {
     updatedReplies.sort((a, b) => new Date(a.createdAt) -new Date(b.createdAt));
     
     return {
-      ...comment,
-      createdAt: convertToRelativeTime(commentCreatedAt.toISOString()),
-      replies: updatedReplies,
-    };
-  });
-  // sort comments
-  updatedComments.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+        ...comment,
+        createdAt: convertToRelativeTime(commentCreatedAt.toISOString()),
+        replies: updatedReplies,
+      };
+    });
+    // sort comments
+    updatedComments.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
 
-  setDataComments(updatedComments);
+    setDataComments(updatedComments);
   }, []);   
   
 
